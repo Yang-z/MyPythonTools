@@ -6,7 +6,7 @@ filesInDir = os.listdir(targetDir)
 
 p0s = r"(\d{13})\D"
 p0 = re.compile(p0s)
-p1s = r"(\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2]\d|3[0-1]) ([0-1]\d|2[0-3])([0-5]\d){2}"
+p1s = r"(\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2]\d|3[0-1])[ _]([0-1]\d|2[0-3])([0-5]\d)([0-5]\d)"
 p1 = re.compile(p1s)
 
 count = 0
@@ -30,7 +30,15 @@ for fileName in filesInDir:
         m1 = re.search(p1, fileName)
         if m1:
             strIndicateTime = m1.group(0)
-            timeArray = time.strptime(strIndicateTime, "%Y%m%d %H%M%S")
+            timeArray = time.strptime(
+                m1.group(1) +
+                m1.group(2) +
+                m1.group(3) +
+                " " +
+                m1.group(4) +
+                m1.group(5) +
+                m1.group(6)
+            , "%Y%m%d %H%M%S")
             timeStamp = time.mktime(timeArray)
 
     if strIndicateTime:

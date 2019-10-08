@@ -11,6 +11,12 @@ from datetime import datetime
 from dateutil import tz
 from dateutil.parser import parse
 
+s="1/60"
+print(s)
+print('/' in s)
+(s0, s1) = s.split('/')
+print(s0)
+print(s1)
 
 """
 # YYYYMMDD HHMMSS ±zzzz

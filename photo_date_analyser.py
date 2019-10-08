@@ -275,23 +275,28 @@ def main():
     # i.e. 'AUTO' 'EXIF' 'TIMESTAMP_IN_FILE_NAME' 'DATETIME_IN_FILE_NAME'
 
     # tzinfo_default = tz.gettz('Asia/Shanghai')
-    # e.g. 'Asia/Shanghai' 'America/Los_Angeles 'America/Cayman' 'Pacific/Kiritimati' and so on
+    # e.g. 'Asia/Shanghai' 'Asia/Tokyo'
+    # 'Europe/London'
+    # 'America/Los_Angeles 'America/Cayman'
+    # 'Pacific/Kiritimati'
+    # and so on
 
+    """
     PhotoDateAnalyser.batch(
         strategy_id='TIMESTAMP_IN_FILE_NAME',
         tzinfo_default=tz.gettz('Asia/Shanghai'),
         should_reMTime=True,
         should_rename=True
     )
-
     """
+
     PhotoDateAnalyser.batch(
         strategy_id='EXIF', 
-        tzinfo_default=tz.gettz('Asia/Shanghai'), 
+        tzinfo_default=tz.gettz('Asia/Shanghai'),
         should_reMTime=False, 
         should_rename=True
     )
-    """
+
 
 
 if __name__ == "__main__":

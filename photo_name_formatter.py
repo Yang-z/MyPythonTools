@@ -84,7 +84,7 @@ class PhotoNameFormatter(object):
 def main():
     # control the output format:
     # PhotoNameFormatter.o_format_date_time = 'IMG_%Y%m%d_%H%M%S%z '  # default
-    # PhotoNameFormatter.o_format_date_time = '%Y%m%d %H%M%S%z '
+    PhotoNameFormatter.o_format_date_time = '%Y%m%d_%H%M%S%z '
     PhotoNameFormatter.batch()
 
 

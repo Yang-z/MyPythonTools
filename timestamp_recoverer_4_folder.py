@@ -11,41 +11,45 @@ import os
 class TimestampRecoverer4Folder(object):
 
     @staticmethod
-    def recover(root, strategy='latest'):
+    def recover(target_dir, strategy='latest', is_root=True):
         ts_earliest = None
         ts_latest = None
 
-        for f in os.listdir(root):
-            path = os.path.join(root, f)
+        for f in os.listdir(target_dir):
+            path = os.path.join(target_dir, f)
+
+            # ts_earliest_current = None
+            # ts_latest_current = None
 
             if os.path.isdir(path):
-                TimestampRecoverer4Folder.recover(path, strategy)
-
-            ts_current = os.path.getmtime(path)
-
-            if ts_earliest is None:
-                ts_earliest = ts_current
+                # 递归
+                ts_earliest_current, ts_latest_current = TimestampRecoverer4Folder.recover(path, strategy, False)
             else:
-                if ts_earliest > ts_current:
-                    ts_earliest = ts_current
+                ts_earliest_current = os.path.getmtime(path)
+                ts_latest_current = ts_earliest_current
 
-            if ts_latest is None:
-                ts_latest = ts_current
-            else:
-                if ts_latest < ts_current:
-                    ts_latest = ts_current
+            if ts_earliest_current is not None:
+                if ts_earliest is None or ts_earliest > ts_earliest_current:
+                    ts_earliest = ts_earliest_current
 
-        ts = None
-        if strategy == 'earliest':
-            ts = ts_earliest
-        elif strategy == 'latest':
-            ts = ts_latest
+            if ts_latest_current is not None:
+                if ts_latest is None or ts_latest < ts_latest_current:
+                    ts_latest = ts_latest_current
 
-        if ts is not None:
-            os.utime(root, (ts, ts))
+        if ts_earliest is not None and ts_latest is not None:
+            if strategy == 'earliest':
+                os.utime(target_dir, (ts_earliest, ts_earliest))
+            elif strategy == 'latest':
+                os.utime(target_dir, (ts_latest, ts_latest))
+
+        if is_root:
+            print("earliest:", ts_earliest, "\nlatest:", ts_latest)
+
+        return ts_earliest, ts_latest
 
 
 if __name__ == "__main__":
     from tkinter import filedialog
 
-    TimestampRecoverer4Folder.recover(filedialog.askdirectory(), 'earliest')
+    TimestampRecoverer4Folder.recover(filedialog.askdirectory(), 'latest')
+

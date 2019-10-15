@@ -1,60 +1,57 @@
 import os, time, re
-import tkFileDialog
 
-targetDir = tkFileDialog.askdirectory()
-filesInDir = os.listdir(targetDir)
 
-p0s = r"(\d{13})\D"
-p0 = re.compile(p0s)
-p1s = r"(\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2]\d|3[0-1])[ _]([0-1]\d|2[0-3])([0-5]\d)([0-5]\d)"
-p1 = re.compile(p1s)
+class TimestampRecoverer4Files(object):
+    p_timestamp = re.compile(r"(\d{13})\D")
+    p_datetime = re.compile(r"(\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2]\d|3[0-1])[ _]([0-1]\d|2[0-3])([0-5]\d)([0-5]\d)")
 
-count = 0
-for fileName in filesInDir:
-    print '*******************************'
+    @staticmethod
+    def get_timestamp_from_name(file_name):
 
-    fileDir = os.path.join(targetDir, fileName)
-    print fileDir
+        timestamp = None
+        timestamp_from_dt = None
 
-    modifiedTime = os.path.getmtime(fileDir)
-    print 'Current MTime: ' + time.strftime('%Y%m%d %H%M%S', time.localtime(modifiedTime))
+        m_ts = re.search(TimestampRecoverer4Files.p_timestamp, file_name)
+        if m_ts:
+            str_ts = m_ts.group(1)
+            timestamp = float(str_ts) / 1000
 
-    strIndicateTime = None
-    timeStamp = None
-    if strIndicateTime is None:
-        m0 = re.search(p0, fileName)
-        if m0:
-            strIndicateTime = m0.group(1)
-            timeStamp = float(m0.group(1)) / 1000
-    if strIndicateTime is None:
-        m1 = re.search(p1, fileName)
-        if m1:
-            strIndicateTime = m1.group(0)
-            timeArray = time.strptime(
-                m1.group(1) +
-                m1.group(2) +
-                m1.group(3) +
+        m_dt = re.search(TimestampRecoverer4Files.p_datetime, file_name)
+        if m_dt:
+            str_dt = m_dt.group(0)
+            time_array = time.strptime(
+                m_dt.group(1) +
+                m_dt.group(2) +
+                m_dt.group(3) +
                 " " +
-                m1.group(4) +
-                m1.group(5) +
-                m1.group(6)
+                m_dt.group(4) +
+                m_dt.group(5) +
+                m_dt.group(6)
             , "%Y%m%d %H%M%S")
-            timeStamp = time.mktime(timeArray)
+            timestamp_from_dt = time.mktime(time_array)
 
-    if strIndicateTime:
-        print 'strIndicateTime: ' + strIndicateTime
-        if timeStamp:
-            print 'timeStamp: %.3f' % timeStamp
-            print ' Target MTime: ' + time.strftime('%Y%m%d %H%M%S', time.localtime(timeStamp))
-            os.utime(fileDir, (timeStamp, timeStamp))
-            count += 1
-            print count
+        print("Timestamp_str: ", str_ts, "  |   timestamp: ", timestamp)
+        print("Datetime_str: ", str_dt, "   |   timestamp: ", timestamp_from_dt)
 
-    modifiedTime = os.path.getmtime(fileDir)
-    print '    New MTime: ' + time.strftime('%Y%m%d %H%M%S', time.localtime(modifiedTime))
+        return timestamp, timestamp_from_dt
 
+    @staticmethod
+    def recover_by_name(path):
+        print(path)
+        print("Current MTime: " + time.strftime('%Y%m%d %H%M%S', time.localtime(os.path.getmtime(path))))
 
+        dir, name = os.path.split(path)
+        timestamp, timestamp_from_dt = TimestampRecoverer4Files.get_timestamp_from_name(name)
+        if timestamp is not None:
+            os.utime(path, (timestamp, timestamp))
+        elif timestamp_from_dt is not None:
+            os.utime(path, (timestamp_from_dt, timestamp_from_dt))
 
+        print("New MTime: " + time.strftime('%Y%m%d %H%M%S', time.localtime(os.path.getmtime(path))))
 
-
-
+        if os.listdir(path):
+            print(path, r"\...")
+            for name in os.listdir(path):
+                sub_path = os.path.join(path, name)
+                # 递归
+                TimestampRecoverer4Files.recover_by_name(sub_path)

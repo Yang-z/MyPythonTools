@@ -1,4 +1,5 @@
 import os, time, re
+import hashlib
 
 
 class TimestampRecoverer4Files(object):
@@ -55,3 +56,49 @@ class TimestampRecoverer4Files(object):
                 sub_path = os.path.join(path, name)
                 # 递归
                 TimestampRecoverer4Files.recover_by_name(sub_path)
+
+    @staticmethod
+    def get_hash_from_file(file_path):
+        with open(file_path, 'rb') as f:
+            _md5obj = hashlib.md5()
+            _md5obj.update(f.read())
+            _hash = _md5obj.hexdigest()
+            return _hash
+
+    @staticmethod
+    def recover_by_hash(target_dir, source_dir):
+        # source
+        source_hash = {}
+        for root, dirs, files in os.walk(source_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                file_hash = TimestampRecoverer4Files.get_hash_from_file(file_path)
+                if file_hash not in source_hash.keys():
+                    source_hash[file_hash] = file_path
+                else:
+                    m_time = os.path.getmtime(source_hash[file_hash])
+                    m_time2 = os.path.getmtime(file_path)
+                    # record the earliest one
+                    if m_time2 < m_time:
+                        source_hash[file_hash] = file_path
+
+        # target
+        for root, dirs, files in os.walk(target_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                file_hash = TimestampRecoverer4Files.get_hash_from_file(file_path)
+                if file_hash in source_hash.keys():
+                    m_time_source = os.path.getmtime(source_hash[file_hash])
+                    m_time_target = os.path.getmtime(file_path)
+                    if m_time_source < m_time_target:
+                        a_time_source = os.path.getatime(source_hash[file_hash])
+                        os.utime(file_path, (a_time_source, m_time_source))
+                        print(file_hash)
+                        print(file_path, "  ", m_time_target)
+                        print(source_hash[file_hash], " ", m_time_source)
+
+
+if __name__ == "__main__":
+    from tkinter import filedialog
+
+    TimestampRecoverer4Files.recover_by_hash(filedialog.askdirectory(), filedialog.askdirectory())

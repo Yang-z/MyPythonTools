@@ -1,7 +1,15 @@
 """
 usage:
-    -recover the modified date of a folder according to the files within in.
+
+    -Recover the modified date of a folder according to the files within.
      i.e, the modified date of a folder could be set to be the latest(or earliest) modified date of the files within.
+
+    -Help to sync the timestamp of folders with a cloud storage by renaming the folders.
+     e.g. google drive doesn't sync the timestamp of folders until a name-changing is detected. Thus, we can rename
+     folders to force google drive to sync the timestamp. After the sync is completed, rename the folders back to its
+     original name, and sync with google drive again. Note, when use this script to rename folders, google drive sync
+     process should be paused to prevent unexpected conflicts.
+
 """
 
 
@@ -11,7 +19,7 @@ import os
 class TimestampRecoverer4Folder(object):
 
     @staticmethod
-    def recover(target_dir, strategy='latest', is_root=True):
+    def recover(target_dir, strategy='latest', refresh=None, is_root=True):
         ts_earliest = None
         ts_latest = None
 
@@ -23,7 +31,8 @@ class TimestampRecoverer4Folder(object):
 
             if os.path.isdir(path):
                 # 递归
-                ts_earliest_current, ts_latest_current = TimestampRecoverer4Folder.recover(path, strategy, False)
+                ts_earliest_current, ts_latest_current \
+                    = TimestampRecoverer4Folder.recover(path, strategy, refresh, False)
             else:
                 ts_earliest_current = os.path.getmtime(path)
                 ts_latest_current = ts_earliest_current
@@ -42,6 +51,25 @@ class TimestampRecoverer4Folder(object):
             elif strategy == 'latest':
                 os.utime(target_dir, (ts_latest, ts_latest))
 
+        # None: do nothing
+        # True: rename folder to include refresh key
+        # False: rename folder back to its original name
+        if refresh is not None:
+            refresh_key = r"[$SyncMyTimestamp!$]"
+            up_dir, target_folder = os.path.split(target_dir)
+            new_target_folder = None
+
+            if refresh is True:
+                if refresh_key not in target_folder:
+                    new_target_folder = refresh_key + target_folder
+            elif refresh is False:
+                if refresh_key in target_folder:
+                    new_target_folder = str.replace(target_folder, refresh_key, "")
+
+            if new_target_folder is not None:
+                new_target_dir = os.path.join(up_dir, new_target_folder)
+                os.rename(target_dir, new_target_dir)
+
         if is_root:
             print("earliest:", ts_earliest, "\nlatest:", ts_latest)
 
@@ -51,5 +79,4 @@ class TimestampRecoverer4Folder(object):
 if __name__ == "__main__":
     from tkinter import filedialog
 
-    TimestampRecoverer4Folder.recover(filedialog.askdirectory(), 'latest')
-
+    TimestampRecoverer4Folder.recover(filedialog.askdirectory(), 'latest', None)

@@ -1,7 +1,7 @@
 """
 usage:
 
-    -Recover the modified date of a folder according to the files within.
+    -Recover the modified date of folders according to the files within.
      i.e, the modified date of a folder could be set to be the latest(or earliest) modified date of the files within.
 
     -Help to sync the timestamp of folders with a cloud storage by renaming the folders.
@@ -16,7 +16,7 @@ usage:
 import os
 
 
-class TimestampRecoverer4Folder(object):
+class TimestampRecoverer4Folders(object):
 
     @staticmethod
     def recover(target_dir, strategy='latest', refresh=None, is_root=True):
@@ -32,7 +32,7 @@ class TimestampRecoverer4Folder(object):
             if os.path.isdir(path):
                 # 递归
                 ts_earliest_current, ts_latest_current \
-                    = TimestampRecoverer4Folder.recover(path, strategy, refresh, False)
+                    = TimestampRecoverer4Folders.recover(path, strategy, refresh, False)
             else:
                 ts_earliest_current = os.path.getmtime(path)
                 ts_latest_current = ts_earliest_current
@@ -79,4 +79,4 @@ class TimestampRecoverer4Folder(object):
 if __name__ == "__main__":
     from tkinter import filedialog
 
-    TimestampRecoverer4Folder.recover(filedialog.askdirectory(), 'latest', None)
+    TimestampRecoverer4Folders.recover(filedialog.askdirectory(), 'latest', None)

@@ -66,7 +66,7 @@ class TimestampRecoverer4Files(object):
             return _hash
 
     @staticmethod
-    def recover_by_hash(target_dir, source_dir):
+    def recover_by_hash(target_dir, source_dir, dry_run=False):
         # source
         source_hash = {}
         for root, dirs, files in os.walk(source_dir):
@@ -83,6 +83,7 @@ class TimestampRecoverer4Files(object):
                         source_hash[file_hash] = file_path
 
         # target
+        count = 0
         for root, dirs, files in os.walk(target_dir):
             for file in files:
                 file_path = os.path.join(root, file)
@@ -92,13 +93,18 @@ class TimestampRecoverer4Files(object):
                     m_time_target = os.path.getmtime(file_path)
                     if m_time_source < m_time_target:
                         a_time_source = os.path.getatime(source_hash[file_hash])
-                        os.utime(file_path, (a_time_source, m_time_source))
+                        if dry_run is False:
+                            os.utime(file_path, (a_time_source, m_time_source))
+                        count += 1
+                        print(count)
                         print(file_hash)
-                        print(file_path, "  ", m_time_target)
-                        print(source_hash[file_hash], " ", m_time_source)
+                        print(file_path)
+                        print("↑↑↑m_time_target: ", m_time_target)
+                        print(source_hash[file_hash])
+                        print("↑↑↑m_time_source: ", m_time_source)
 
 
 if __name__ == "__main__":
     from tkinter import filedialog
 
-    TimestampRecoverer4Files.recover_by_hash(filedialog.askdirectory(), filedialog.askdirectory())
+    TimestampRecoverer4Files.recover_by_hash(filedialog.askdirectory(), filedialog.askdirectory(), True)

@@ -51,5 +51,5 @@ if __name__ == "__main__":
 
     # TimestampHelper.show(filedialog.askopenfilename())
     # TimestampHelper.set(filedialog.askopenfilename(), float(input('timestamp: ')), False)
-    # TimestampHelper.copy(filedialog.askopenfilename(), filedialog.askdirectory(), False)
+    # TimestampHelper.copy(filedialog.askopenfilename(), filedialog.askopenfilename(), False)
     # TimestampHelper.shift(filedialog.askdirectory(), -1*365*24*60*60, True)

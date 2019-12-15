@@ -3,6 +3,8 @@ import pickle
 import os.path
 import uuid
 
+from retrying import retry
+
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -12,9 +14,12 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 
 
 # Call the Drive v3 API
-def connect(accout):
-    path_credentials = r'.token/' + accout + r'/credentials.json'
-    path_token = r'.token/' + accout + r'/token.pickle'
+def connect(account):
+    path_credentials = r'.cache/credentials.json'
+    path_account = r'.cache/' + account
+    if not os.path.exists(path_account):
+        os.makedirs(path_account)
+    path_token = path_account + r'/token.pickle'
 
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
@@ -28,8 +33,7 @@ def connect(accout):
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                path_credentials, SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(path_credentials, SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
         with open(path_token, 'wb') as token:
@@ -40,9 +44,13 @@ def connect(accout):
     return service
 
 
-def create_t_drive(SERVICE):
+@retry(wait_random_min=30000, wait_random_max=60000)
+def create_t_drive(SERVICE, name=None):
+    if name is None:
+        name = 'Untitled shared drive'
+
     drive_metadata = {
-        'name': 'Untitled shared drive',
+        'name': name,
         # "hidden": True
     }
     request_id = str(uuid.uuid4())
@@ -56,6 +64,7 @@ def create_t_drive(SERVICE):
     return drive
 
 
+@retry(wait_random_min=30000, wait_random_max=60000)
 def hide_t_drive(SERVICE, id):
     results = SERVICE.drives().hide(
         driveId=id,
@@ -65,6 +74,16 @@ def hide_t_drive(SERVICE, id):
     return results
 
 
+@retry(wait_random_min=30000, wait_random_max=60000)
+def is_drive_hidden(SERVICE, id):
+    result = SERVICE.drives().get(
+        driveId=id,
+        fields="hidden, createdTime"
+    ).execute()
+    return result['hidden'], result['createdTime']
+
+
+@retry(wait_random_min=30000, wait_random_max=60000)
 def list_t_drives(SERVICE):
     results = SERVICE.drives().list(
         #
@@ -83,8 +102,7 @@ def list_t_drives(SERVICE):
 
 cache_response = None
 cache_i = None
-
-
+@retry(wait_random_min=30000, wait_random_max=60000)
 def list_t_drives_1_by_1(SERVICE):
     global cache_response
     global cache_i
@@ -116,14 +134,17 @@ def list_t_drives_1_by_1(SERVICE):
             return list_t_drives_1_by_1(SERVICE)
 
 
-def is_drive_hidden(SERVICE, id):
-    result = SERVICE.drives().get(
-        driveId=id,
-        fields="hidden, createdTime"
+@retry(wait_random_min=30000, wait_random_max=60000)
+def get_t_drive(SERVICE, id):
+    results = SERVICE.teamdrives().get(
+        teamDriveId=id,
+        fields='*',
+        # supportsTeamDrives=True,
     ).execute()
-    return result['hidden'], result['createdTime']
+    print(results)
 
 
+@retry(wait_random_min=30000, wait_random_max=60000)
 def list_permissions(SERVICE, id):
     results = SERVICE.permissions().list(
         fileId=id,
@@ -142,6 +163,7 @@ def list_permissions(SERVICE, id):
     return items
 
 
+@retry(wait_random_min=30000, wait_random_max=60000)
 def get_permission_by_email(SERVICE, id, email):
     permissions = list_permissions(SERVICE, id)
     for permission in permissions:
@@ -152,8 +174,7 @@ def get_permission_by_email(SERVICE, id, email):
 
 
 cache_permissions = {}
-
-
+@retry(wait_random_min=30000, wait_random_max=60000)
 def get_permission_id_by_email(SERVICE, id, email):
     if email in cache_permissions:
         return cache_permissions[email]
@@ -163,6 +184,7 @@ def get_permission_id_by_email(SERVICE, id, email):
         return permission_id
 
 
+@retry(wait_random_min=30000, wait_random_max=60000)
 def create_permission(SERVICE, id, email):
     body = {
         'type': 'user',
@@ -181,6 +203,7 @@ def create_permission(SERVICE, id, email):
     return results
 
 
+@retry(wait_random_min=30000, wait_random_max=60000)
 def delete_permission(SERVICE, id, p_id):
     results = SERVICE.permissions().delete(
         fileId=id,
@@ -189,132 +212,145 @@ def delete_permission(SERVICE, id, p_id):
         # fields='*'
     ).execute()
 
-    print(results)
+    print(results)  # nothing
     return results
 
 
-def create_t_drive_for(SERVICE, from_email, to_email):
-    drive = create_t_drive(SERVICE)
+def create_t_drive_for(SERVICE, from_email, to_email, name=None):
+    drive = create_t_drive(SERVICE, name)
     create_permission(SERVICE, drive['id'], to_email)
     creator_permission_id = get_permission_id_by_email(SERVICE, drive['id'], from_email)
     delete_permission(SERVICE, drive['id'], creator_permission_id)
 
 
-if __name__ == '__main__':
-    import time
+def rename_t_drive_by_org(SERVICE):
+    drive = list_t_drives_1_by_1(SERVICE)
+    
+    return
 
 
-    def batch_trans_t_drive(SERVICE, from_email, to_email):
-        drives = list_t_drives(SERVICE)
-        for drive in drives:
-            permissions = list_permissions(SERVICE, drive['id'])
-            if len(permissions) == 1:
-                create_permission(SERVICE, drive['id'], to_email)
-
-        for drive in drives:
-            permissions = list_permissions(SERVICE, drive['id'])
-            if len(permissions) == 2 and drive['name'] == "Untitled shared drive":
-                permission_id = get_permission_id_by_email(SERVICE, drive['id'], from_email)
-                delete_permission(SERVICE, drive['id'], permission_id)
-
-
-    def batch_create_t_drive_for(SERVICE, from_email, to_email):
-        i = 8
-        i_max = 10 + 24
-        while i < i_max:
-            print(i)
-            try:
-                create_t_drive_for(SERVICE, from_email, to_email)
-            except Exception as e:
-                print(e)
-                time.sleep(60)
-                continue
-            i = i + 1
-
-
-    # good idea, but need to reconstruct Funcs
-    def try_and_sleep(Func, a, b):
-        while True:
-            try:
-                r = Func(a, b)
-            except Exception as e:
-                print(e)
-                time.sleep(60)
-                continue
-            break
-        return r
-
-
-    def batch_hide_t_drive(SERVICE):
-        count = 0
-        while True:
-            count += 1
-            print(count)
-
-            # drive = list_t_drives_1_by_1(SERVICE)
-            while True:
-                try:
-                    drive = list_t_drives_1_by_1(SERVICE)
-                except Exception as e:
-                    print(e)
-                    time.sleep(60)
-                    continue
-                break
-
-            if drive is None:
-                break
-            else:
-                # is_hidden = is_drive_hidden(SERVICE, drive['id'])
-                while True:
-                    try:
-                        is_hidden, created_time = is_drive_hidden(SERVICE, drive['id'])
-                    except Exception as e:
-                        print(e)
-                        time.sleep(60)
-                        continue
-                    break
-
-                print("*", drive, "hidden:", is_hidden, "createdTime:", created_time)
-
-                if is_hidden:
-                    continue
-
-                if drive['name'] != "Untitled shared drive":
-                    print("**drive['name']: ", drive['name'])
-
-                # result = hide_t_drive(SERVICE, drive['id'])
-                while True:
-                    try:
-                        hide_result = hide_t_drive(SERVICE, drive['id'])
-                    except Exception as e:
-                        print(e)
-                        time.sleep(60)
-                        continue
-                    break
-                print("*", hide_result)
-
+########################################################################################################################
+TDSources = []
+TDReceivers = []
+def load_accounts():
+    global TDSources
+    global TDReceivers
 
     while False:
-        emails = {
-            'from_email': "*****",
-            'to_email': "*****",
-        }
-        f = open(r'.token/accounts.txt', 'w')
-        f.write(str(emails))
-        f.close()
+        TDSources = [
+            {
+                'org': "edu.*",
+                'url': "*@*.edu",
+                'org-name-zh': "某某大学",
+            },
+
+        ]
+
+        TDReceivers = [
+            {
+                'email': "*@gmail.com",
+                'times': 1
+            },
+
+        ]
+
+        with open(r'.cache/TDSources.txt', 'w') as f:
+            f.write(str(TDSources))
+
+        with open(r'.cache/TDReceivers.txt', 'w') as f:
+            f.write(str(TDReceivers))
 
         break
 
     while True:
-        f = open(r'.token/accounts.txt', 'r')
-        a = f.read()
-        emails = eval(a)
-        f.close()
+        with open(r'.cache/TDSources.txt', 'r') as f:
+            TDSources = eval(f.read().lower())
+
+        with open(r'.cache/TDReceivers.txt', 'r') as f:
+            TDReceivers = eval(f.read().lower())
+
         break
 
-    # SERVICE = connect(emails['from_email'])
-    # batch_trans_t_drive(SERVICE, emails['from_email'], emails['to_email'])
-    # batch_create_t_drive_for(SERVICE, emails['from_email'], emails['to_email'])
 
-    # SERVICE = connect(emails['to_email'])
+########################################################################################################################
+def batch_trans_t_drive(SERVICE, from_email, to_email):
+    drives = list_t_drives(SERVICE)
+    for drive in drives:
+        permissions = list_permissions(SERVICE, drive['id'])
+        if len(permissions) == 1:
+            create_permission(SERVICE, drive['id'], to_email)
+
+    for drive in drives:
+        permissions = list_permissions(SERVICE, drive['id'])
+        if len(permissions) == 2 and drive['name'] == "Untitled shared drive":
+            permission_id = get_permission_id_by_email(SERVICE, drive['id'], from_email)
+            delete_permission(SERVICE, drive['id'], permission_id)
+
+
+def batch_create_t_drive_for(SERVICE, from_email, to_email):
+    i = 8
+    i_max = 10 + 24
+    while i < i_max:
+        print(i)
+        create_t_drive_for(SERVICE, from_email, to_email)
+        i = i + 1
+
+
+def batch_hide_t_drive(SERVICE):
+    count = 0
+    while True:
+        count += 1
+        print(count)
+
+        drive = list_t_drives_1_by_1(SERVICE)
+
+        if drive is None:
+            break
+        else:
+            is_hidden, created_time = is_drive_hidden(SERVICE, drive['id'])
+            print("*", drive, "hidden:", is_hidden, "createdTime:", created_time)
+
+            if is_hidden:
+                continue
+
+            if drive['name'] != "Untitled shared drive":
+                print("**drive['name']: ", drive['name'])
+
+            hide_result = hide_t_drive(SERVICE, drive['id'])
+            print("*", hide_result)
+
+
+########################################################################################################################
+def batch_create_t_drives_1_for_all(td_source, td_receivers):
+    from_email = td_source['email']
+    service = connect(from_email)
+    t_drive_name = td_source['org']
+
+    for td_receiver in td_receivers:
+        to_email = td_receiver['email']
+        times = td_receiver['times']
+
+        while times > 0:
+            create_t_drive_for(service, from_email, to_email, t_drive_name)
+            times -= 1
+
+
+########################################################################################################################
+if __name__ == '__main__':
+    load_accounts()
+
+    # from_email = TDSources[0]['email']
+    # to_email = TDReceivers[-1]['email']
+
+    # SERVICE = connect(from_email)
+    # batch_trans_t_drive(SERVICE, from_email, to_email)
+    # batch_create_t_drive_for(SERVICE, from_email, 'to_email')
+
+    # SERVICE = connect(to_email)
     # batch_hide_t_drive(SERVICE)
+
+    ################################################################
+
+    # batch_create_t_drives_1_for_all(TDSources[1], TDReceivers)
+
+

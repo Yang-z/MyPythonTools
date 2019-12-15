@@ -28,7 +28,13 @@ def request_all_4_1(td_receiver):
         request_1_4_1(td_source, td_receiver)
 
 
-if __name__ == '__main__':
+########################################################################################################################
+TDSources = []
+TDReceivers = []
+def load_accounts():
+    global TDSources
+    global TDReceivers
+
     while False:
         TDSources = [
             {
@@ -47,22 +53,27 @@ if __name__ == '__main__':
 
         ]
 
-        with open(r'.token/TDSources_yx.txt', 'w') as f:
+        with open(r'.cache/TDSources_yx.txt', 'w') as f:
             f.write(str(TDSources))
 
-        with open(r'.token/TDReceivers.txt', 'w') as f:
+        with open(r'.cache/TDReceivers.txt', 'w') as f:
             f.write(str(TDReceivers))
 
         break
 
     while True:
-        with open(r'.token/TDSources_yx.txt', 'r') as f:
-            TDSources = eval(f.read())
+        with open(r'.cache/TDSources_yx.txt', 'r') as f:
+            TDSources = eval(f.read().lower())
 
-        with open(r'.token/TDReceivers.txt', 'r') as f:
-            TDReceivers = eval(f.read())
+        with open(r'.cache/TDReceivers.txt', 'r') as f:
+            TDReceivers = eval(f.read().lower())
 
         break
+
+
+########################################################################################################################
+if __name__ == '__main__':
+    load_accounts()
 
     # request_1_4_1(TDSources[-1], TDReceivers[-1])
     print("done!")

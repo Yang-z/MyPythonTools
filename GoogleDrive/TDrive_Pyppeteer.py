@@ -80,6 +80,7 @@ async def intercept_response(res):
         resp = await res.json()
 
         if 'kind' in resp and resp['kind'] == 'drive#teamDriveList':
+            print(resp)
             for item in resp['items']:
                 teamDriveDict[item['id']] = item
 
@@ -98,7 +99,7 @@ async def main():
 
     browser = await launch(
         executablePath=pyppeteer_args['chromePath'],
-        userDataDir=pyppeteer_args['userDataDir2'],
+        userDataDir=pyppeteer_args['userDataDir1'],
         headless=False,
         # devtools=True,
         # autoClose=False,
@@ -114,14 +115,26 @@ async def main():
     page.on('response', intercept_response)
     # await page.setViewport({'width': 1200, 'height': 900})
 
-    for i in range(0, 6):
+    for i in range(0, 1):
         isCompleted = False
         await page.goto(
-            url+str(i)+r'/my-drive',
+            url+str(i)+r'/shared-drives',
             # waitUntil='load',
         )
         while isCompleted is False:
             await asyncio.sleep(5)
+        # goto 'shared-drives' will not request hidden drive list.
+
+        """
+        isCompleted = False
+        await page.goto(
+            url+str(i)+r'/shared-drives-hidden',
+            # waitUntil='load',
+        )
+        while isCompleted is False:
+            await asyncio.sleep(5)
+        """
+        # goto 'shared-drives-hidden' will request un-hidden drive list again.
 
     save_cache()
     print("Saved!")

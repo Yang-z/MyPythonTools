@@ -9,6 +9,8 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
+import json
+
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
@@ -153,12 +155,14 @@ def list_permissions(SERVICE, id):
     ).execute()
     items = results.get('permissions', [])
 
+    """
     if not items:
         print('No permissions found.')
     else:
         print('Permissions:')
         for item in items:
             print(u'*{0} ({1}) ({2})'.format(item['emailAddress'], item['role'], item['id']))
+    """
 
     return items
 
@@ -223,10 +227,43 @@ def create_t_drive_for(SERVICE, from_email, to_email, name=None):
     delete_permission(SERVICE, drive['id'], creator_permission_id)
 
 
-def rename_t_drive_by_org(SERVICE):
-    drive = list_t_drives_1_by_1(SERVICE)
-    
-    return
+t_drive_dict = None
+def load_t_drive_dict():
+    global t_drive_dict
+    with open(r'.cache/teamDriveDict.json', 'r') as f:
+        t_drive_dict = json.loads(f.read())
+
+
+@retry(wait_random_min=30000, wait_random_max=60000)
+def rename_t_drive(SERVICE, drive, new_name):
+    if drive['name'] == new_name:
+        print(f"Drive [{drive['id']}] already has a name of [{new_name}] ")
+        return
+
+    body = {
+        'name': new_name,
+    }
+    drive1 = SERVICE.drives().update(
+        driveId=drive['id'],
+        body=body,
+    ).execute()
+    print(f"Drive [{drive['id']}] is renamed from [{drive['name']}] to [{new_name}] ")
+
+    return drive1
+
+
+def rename_t_drive_by_org(SERVICE, drive):
+    try:
+        org: str = t_drive_dict[drive['id']]['primaryDomainName']
+    except Exception as e:
+        print(f"Drive [{drive['id']}] [{drive['name']}] is not found in cache!!!] ")
+        return
+    org_list: list = org.split('.')
+    org_list.reverse()
+    org_reversed = '.'.join(org_list)
+
+    rename_t_drive(SERVICE, drive, org_reversed)
+
 
 
 ########################################################################################################################
@@ -335,9 +372,67 @@ def batch_create_t_drives_1_for_all(td_source, td_receivers):
             times -= 1
 
 
+def batch_rename_t_drive_by_org(SERVICE):
+    if t_drive_dict is None:
+        load_t_drive_dict()
+
+    while True:
+        drive = list_t_drives_1_by_1(SERVICE)
+        if drive is not None:
+            rename_t_drive_by_org(SERVICE, drive)
+        else:
+            break
+
+
+def batch_create_permission_when_org_is(SERVICE, email, org):
+    if t_drive_dict is None:
+        load_t_drive_dict()
+
+    while True:
+        drive = list_t_drives_1_by_1(SERVICE)
+
+        if drive is not None:
+
+            try:
+                _org: str = t_drive_dict[drive['id']]['primaryDomainName']
+            except Exception as e:
+                print(f"Drive [{drive['id']}] [{drive['name']}] is not found in cache!!!] ")
+                continue
+
+            if _org == org:
+                create_permission(SERVICE, drive['id'], email)
+        else:
+            break
+
+
+def batch_delete_permission_when_org_is(SERVICE, email, org):
+    if t_drive_dict is None:
+        load_t_drive_dict()
+
+    while True:
+        drive = list_t_drives_1_by_1(SERVICE)
+
+        if drive is not None:
+
+            try:
+                _org: str = t_drive_dict[drive['id']]['primaryDomainName']
+            except Exception as e:
+                print(f"Drive [{drive['id']}] [{drive['name']}] is not found in cache!!!] ")
+                continue
+
+            if _org == org:
+                ps = list_permissions(SERVICE, drive['id'])
+                if len(ps) <= 1:
+                    continue
+                p_id = get_permission_id_by_email(SERVICE, drive['id'], email)
+                delete_permission(SERVICE, drive['id'], p_id)
+        else:
+            break
+
+
 ########################################################################################################################
 if __name__ == '__main__':
-    load_accounts()
+    # load_accounts()
 
     # from_email = TDSources[0]['email']
     # to_email = TDReceivers[-1]['email']
@@ -353,4 +448,10 @@ if __name__ == '__main__':
 
     # batch_create_t_drives_1_for_all(TDSources[1], TDReceivers)
 
+    # SERVICE = connect('*@*.*'.lower())
+    # batch_rename_t_drive_by_org(SERVICE)
 
+    # batch_create_permission_when_org_is(SERVICE, '*@*.*', '*.*')
+    # batch_delete_permission_when_org_is(SERVICE, '*@*.*', '*.*')
+
+    print('done!')

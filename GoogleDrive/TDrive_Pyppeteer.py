@@ -55,15 +55,15 @@ load_pyppeteer_args()
 ########################################################################################################################
 
 
-def load_cache():
+def load_cache(saveDir='teamDriveDict.json'):
     global teamDriveDict
-    with open(r'.cache/teamDriveDict.json', 'r') as f:
+    with open(r'.cache/' + saveDir, 'r') as f:
         teamDriveDict = json.loads(f.read())
 
 
-def save_cache():
+def save_cache(saveDir='teamDriveDict.json'):
     global teamDriveDict
-    with open(r'.cache/teamDriveDict.json', 'w') as f:
+    with open(r'.cache/' + saveDir, 'w') as f:
         f.write(json.dumps(teamDriveDict, indent=4, separators=(',', ':')))
 ########################################################################################################################
 
@@ -95,7 +95,9 @@ async def intercept_response(res):
 async def main():
     global isCompleted
 
-    load_cache()
+    saveDir = pyppeteer_args['saveDir1']
+
+    load_cache(saveDir)
 
     browser = await launch(
         executablePath=pyppeteer_args['chromePath'],
@@ -136,7 +138,7 @@ async def main():
         """
         # goto 'shared-drives-hidden' will request un-hidden drive list again.
 
-    save_cache()
+    save_cache(saveDir)
     print("Saved!")
 
     await asyncio.sleep(5)

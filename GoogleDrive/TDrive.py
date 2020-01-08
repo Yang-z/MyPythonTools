@@ -4,6 +4,7 @@ import os.path
 import uuid
 
 from retrying import retry
+import time
 
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -88,6 +89,7 @@ def is_drive_hidden(SERVICE, id):
 @retry(wait_random_min=30000, wait_random_max=60000)
 def list_t_drives(SERVICE):
     results = SERVICE.drives().list(
+        pageSize=100,
         #
     ).execute()
     items = results.get('drives', [])
@@ -228,9 +230,9 @@ def create_t_drive_for(SERVICE, from_email, to_email, name=None):
 
 
 t_drive_dict = None
-def load_t_drive_dict():
+def load_t_drive_dict(saveDir = 'teamDriveDict.json'):
     global t_drive_dict
-    with open(r'.cache/teamDriveDict.json', 'r') as f:
+    with open(r'.cache/' + saveDir, 'r') as f:
         t_drive_dict = json.loads(f.read())
 
 
@@ -314,12 +316,15 @@ def batch_trans_t_drive(SERVICE, from_email, to_email):
     drives = list_t_drives(SERVICE)
     for drive in drives:
         permissions = list_permissions(SERVICE, drive['id'])
-        if len(permissions) == 1:
+        if len(permissions) == 1 and drive['name'] == "Untitled shared drive":
             create_permission(SERVICE, drive['id'], to_email)
+
+    time.sleep(10)
 
     for drive in drives:
         permissions = list_permissions(SERVICE, drive['id'])
         if len(permissions) == 2 and drive['name'] == "Untitled shared drive":
+
             permission_id = get_permission_id_by_email(SERVICE, drive['id'], from_email)
             delete_permission(SERVICE, drive['id'], permission_id)
 
@@ -382,6 +387,41 @@ def batch_rename_t_drive_by_org(SERVICE):
             rename_t_drive_by_org(SERVICE, drive)
         else:
             break
+
+
+def batch_count_t_drive_by_org(teamDriveDictCache):
+    statistics = {}
+
+    if t_drive_dict is None:
+        load_t_drive_dict(teamDriveDictCache)
+
+    for item in t_drive_dict:
+        org = t_drive_dict[item]['primaryDomainName']
+        if org not in statistics:
+            statistics[org] = 1
+        else:
+            statistics[org] += 1
+
+    for item in statistics:
+        print(f"{item}: {statistics[item]}")
+
+
+def batch_count_t_drive_by_name(SERVICE):
+    statistics = {}
+
+    while True:
+        drive = list_t_drives_1_by_1(SERVICE)
+        if drive is not None:
+            name = drive['name']
+            if name not in statistics:
+                statistics[name] = 1
+            else:
+                statistics[name] += 1
+        else:
+            break
+
+    for item in statistics:
+        print(f"{item}: {statistics[item]}")
 
 
 def batch_create_permission_when_org_is(SERVICE, email, org):
@@ -453,5 +493,10 @@ if __name__ == '__main__':
 
     # batch_create_permission_when_org_is(SERVICE, '*@*.*', '*.*')
     # batch_delete_permission_when_org_is(SERVICE, '*@*.*', '*.*')
+
+    # batch_count_t_drive_by_org(r'*@*.*\teamDriveDict.json')
+
+    # SERVICE = connect(TDReceivers[-2]['email'])
+    # batch_count_t_drive_by_name(SERVICE)
 
     print('done!')

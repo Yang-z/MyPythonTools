@@ -2,6 +2,8 @@ import requests
 import json
 from time import sleep
 
+from Cache import cache
+
 
 def request_1_4_1(td_source, td_receiver):
     payload = json.dumps({
@@ -15,65 +17,21 @@ def request_1_4_1(td_source, td_receiver):
         r = requests.post(td_source['url'], data=payload)
         sleep(3)
         times -= 1
-        print(td_receiver['email'], " ← ", td_source['org'], "(status:", r.status_code, ")")
+        print(f"{td_receiver['email']} ← {td_source['org']} (status: {r.status_code})")
 
 
 def request_1_4_all(td_source):
-    for td_receiver in TDReceivers:
+    for td_receiver in cache.TDReceivers:
         request_1_4_1(td_source, td_receiver)
 
 
 def request_all_4_1(td_receiver):
-    for td_source in TDSources:
+    for td_source in cache.TDSources_yx:
         request_1_4_1(td_source, td_receiver)
 
 
 ########################################################################################################################
-TDSources = []
-TDReceivers = []
-def load_accounts():
-    global TDSources
-    global TDReceivers
 
-    while False:
-        TDSources = [
-            {
-                'org': "edu.*",
-                'url': "https://*.*.workers.dev/drive",
-                'name-zh': "某某大学",
-            },
-
-        ]
-
-        TDReceivers = [
-            {
-                'email': "*@gmail.com",
-                'times': 1
-            },
-
-        ]
-
-        with open(r'.cache/TDSources_yx.txt', 'w') as f:
-            f.write(str(TDSources))
-
-        with open(r'.cache/TDReceivers.txt', 'w') as f:
-            f.write(str(TDReceivers))
-
-        break
-
-    while True:
-        with open(r'.cache/TDSources_yx.txt', 'r') as f:
-            TDSources = eval(f.read().lower())
-
-        with open(r'.cache/TDReceivers.txt', 'r') as f:
-            TDReceivers = eval(f.read().lower())
-
-        break
-
-
-########################################################################################################################
 if __name__ == '__main__':
-    load_accounts()
-
-    # request_1_4_1(TDSources[-1], TDReceivers[-1])
+    # request_1_4_all(cache.TDSources_yx[-1])
     print("done!")

@@ -1,7 +1,6 @@
 import asyncio
 from pyppeteer import launch
 
-import json
 ########################################################################################################################
 
 
@@ -23,53 +22,14 @@ patch_pyppeteer()
 ########################################################################################################################
 
 
-pyppeteer_args = None
-teamDriveDict = None
+from Cache import cache
 
 url = r'https://drive.google.com/drive/u/'
 isCompleted = False
 
 
-def save_pyppeteer_args():
-    args = {
-        'chromePath': r'*\Google\Chrome\Application\chrome.exe',
-        'userDataDir': r'*\User Data',
-        'userDataDir1': r'*\User Data 1',
-        'userDataDir2': r'*\User Data 2',
-    }
-
-    with open(r'.cache/pyppeteer.args', 'w') as f:
-        f.write(json.dumps(args, indent=4, separators=(',', ':')))
-
-
-# save_pyppeteer_args()
-
-
-def load_pyppeteer_args():
-    global pyppeteer_args
-    with open(r'.cache/pyppeteer.args', 'r') as f:
-        pyppeteer_args = json.loads(f.read())
-
-
-load_pyppeteer_args()
-########################################################################################################################
-
-
-def load_cache(saveDir='teamDriveDict.json'):
-    global teamDriveDict
-    with open(r'.cache/' + saveDir, 'r') as f:
-        teamDriveDict = json.loads(f.read())
-
-
-def save_cache(saveDir='teamDriveDict.json'):
-    global teamDriveDict
-    with open(r'.cache/' + saveDir, 'w') as f:
-        f.write(json.dumps(teamDriveDict, indent=4, separators=(',', ':')))
-########################################################################################################################
-
-
 async def intercept_response(res):
-    global teamDriveDict
+
     global isCompleted
 
     if res.request.resourceType == 'xhr' \
@@ -82,7 +42,7 @@ async def intercept_response(res):
         if 'kind' in resp and resp['kind'] == 'drive#teamDriveList':
             print(resp)
             for item in resp['items']:
-                teamDriveDict[item['id']] = item
+                cache.TeamDriveDict[item['id']] = item
 
             if 'nextPageToken' not in resp and isCompleted is False:
                 isCompleted = True
@@ -94,14 +54,11 @@ async def intercept_response(res):
 
 async def main():
     global isCompleted
-
-    saveDir = pyppeteer_args['saveDir1']
-
-    load_cache(saveDir)
+    global url
 
     browser = await launch(
-        executablePath=pyppeteer_args['chromePath'],
-        userDataDir=pyppeteer_args['userDataDir1'],
+        executablePath=cache.pyppeteer_args['chromePath'],
+        userDataDir=cache.pyppeteer_args['userDataDir1'],
         headless=False,
         # devtools=True,
         # autoClose=False,
@@ -138,11 +95,12 @@ async def main():
         """
         # goto 'shared-drives-hidden' will request un-hidden drive list again.
 
-    save_cache(saveDir)
+    cache.TeamDriveDict = None  # do save actually!
     print("Saved!")
 
     await asyncio.sleep(5)
     await browser.close()
 
 
-asyncio.get_event_loop().run_until_complete(main())
+if __name__ == '__main__':
+    asyncio.get_event_loop().run_until_complete(main())

@@ -22,7 +22,7 @@ patch_pyppeteer()
 ########################################################################################################################
 
 
-from Cache import cache
+from .Cache import cache
 
 url = r'https://drive.google.com/drive/u/'
 isCompleted = False

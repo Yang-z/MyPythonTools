@@ -14,117 +14,153 @@ class __Cache__:
         # while VS Code take the opened dir as the default work dir.
         # print(os.getcwd())
 
-        self._root = os.path.dirname(__file__) + r"/.cache/"
+        self._root: str = os.path.join(os.path.dirname(__file__), r".cache")
 
-        self._path_credentials = self._root + r"credentials.json"
-        self._path_account = self._root + r"<google_account>/"
-        self._file_token = r"token.pickle"
+        self._path_json: str = os.path.join(self._root, "cache.json")
+        self._json: dict = self._load(self._path_json)
 
-        # only store on memory
-        self.permissions = {}
-
-        self._path_TDSources = self._root + r"TDSources.txt"
-        self._path_TDReceivers = self._root + r"TDReceivers.txt"
-        self._path_TDSources_yx = self._root + r"TDSources_yx.txt"
-
-        # [
-        #     {
-        #         'org': "edu.*",
-        #         'url': "*@*.edu",
-        #         'org-name-zh': "某某大学",
-        #     },
-        # ]
-        self._TDSources: list = None
-
-        # [
-        #     {
-        #         'email': "*@gmail.com",
-        #         'times': 1
-        #     },
-        # ]
-        self._TDReceivers: list = None
-
-        # [
-        #     {
-        #         'org': "edu.*",
-        #         'url': "https://*.*.workers.dev/drive",
-        #         'name-zh': "某某大学",
-        #     },
-        # ]
-        self._TDSources_yx: list = None
-
-        self._path_TeamDriveDict = self._root + r"TeamDriveDict.json"
+        # load from file
         self._TeamDriveDict: dict = None
 
-        self._path_pyppeteer_args = self._root + r"pyppeteer_args.json"
-
-        # {
-        #     'chromePath': r'*\Google\Chrome\Application\chrome.exe',
-        #     'userDataDir': r'*\User Data',
-        #     'userDataDir1': r'*\User Data 1',
-        #     'userDataDir2': r'*\User Data 2',
-        # }
-        self._pyppeteer_args: dict = None
+        # only store on memory
+        self.permissions: dict = {}
 
     ################################################################################
+    @property
+    def json(self) -> dict:
+        return self._json
+
+    @json.setter
+    def json(self, value):
+        if value is not None:
+            self._json = value
+        self._save(self._json, self._path_json, 'json')
+
+    ########################################
+    """ interface """
+    # "gd_api":
+    # {
+    #     "SCOPES":
+    #     [
+    #         "https://www.googleapis.com/auth/drive"
+    #     ],
+    #     "path_credentials": "<cache_root>/credentials.json",
+    #     "path_token": "<cache_root>/<google_account>/token.pickle"
+    # }
 
     @property
-    def root(self):
-        return self._root
+    def gd_api_SCOPES(self) -> list:
+        return self._json["gd_api"]["SCOPES"]
 
     @property
-    def path_credentials(self):
-        return self._path_credentials
+    def gd_api_path_credentials(self) -> str:
+        return self._solve_path(self._json["gd_api"]["path_credentials"])
 
-    def path_account(self, google_account: str):
-        path = self._path_account.replace(r"<google_account>", google_account)
-        if not os.path.exists(path):
-            os.makedirs(path)
-        return path
+    def gd_api_path_token(self, g_account: str) -> str:
+        return self._solve_path(self._json["gd_api"]["path_token"], g_account)
 
-    def path_token(self, google_account: str):
-        path_account = self.path_account(google_account)
-        return path_account + self._file_token
+    ########################################
+    """ interface """
+    # "pyppeteer_args":
+    # {
+    #     "default":
+    #     {
+    #         "chromePath": "%LOCALAPPDATA%\\pyppeteer\\pyppeteer\\local-chromium\\575458\\chrome-win32",
+    #         "userDataDir": "%LOCALAPPDATA%\\pyppeteer\\pyppeteer\\.dev_profile\\tmp*"
+    #     },
+    #     "chromePath":"*\\chrome.exe",
+    #     "userDataDir":"*\\User Data",
+    # }
+    @property
+    def pyppeteer_args(self):
+        return self._json["pyppeteer_args"]
+
+    """ interface """
+    # "requests_args":
+    # [
+    #     {
+    #         "url": "https://drive.google.com/drive/u/0/shared-drives",
+    #         "headers":
+    #         {
+    #             "cookie": "...",
+    #             "upgrade-insecure-requests": "...",
+    #             "user-agent": "...",
+    #             "x-chrome-connected":"...",
+    #             "x-client-data":"..."
+    #         }
+    #     },
+    #     {
+    #         "url": "https://clients6.google.com/drive/v2internal/teamdrives",
+    #         "payload":
+    #             {
+    #                 "fields": "kind,nextPageToken,items(...)",
+    #                 "q": "hidden = false",
+    #                 "key": "..."
+    #             },
+    #         "authorization": "..."
+    #     }
+    # ]
+    @property
+    def requests_args(self):
+        return self._json["requests_args"]
 
     ################################################################################
-
+    """ interface """
+    # "TDSources":
+    # [
+    #     {
+    #         "org": "org.*",
+    #         "email": "*@*.org",
+    #         "org-name-zh": "*组织"
+    #     },
+    # ]
     @property
     def TDSources(self):
-        if self._TDSources is None:
-            self._TDSources = self._load(self._path_TDSources, 'text')
-        return self._TDSources
+        return self._json["TDSources"]
 
-    @TDSources.setter
-    def TDSources(self, value):
-        self._TDSources = value
-        self._save(self._TDSources, self._path_TDSources, 'test')
-
+    """ interface """
+    # "TDReceivers":
+    # [
+    #     {
+    #         "email": "@*.org",
+    #         "times": 0
+    #     },
+    # ]
     @property
     def TDReceivers(self):
-        if self._TDReceivers is None:
-            self._TDReceivers = self._load(self._path_TDReceivers, 'text')
-        return self._TDReceivers
+        return self._json["TDReceivers"]
 
-    @TDReceivers.setter
-    def TDReceivers(self, value):
-        self._TDReceivers = value
-        self._save(self._TDReceivers, self._path_TDReceivers, 'test')
-
+    """ interface """
+    # "TDSources_yx":
+    # [
+    #     {
+    #         "org": "org.*",
+    #         "url": "https://*.workers.dev/drive",
+    #         "name-zh": "*组织",
+    #     },
+    # ],
     @property
-    def TDSources_yx(self):
-        if self._TDSources_yx is None:
-            self._TDSources_yx = self._load(self._path_TDSources_yx, 'text')
-        return self._TDSources_yx
+    def TDSources_yx(self) -> dict:
+        return self._json["TDSources_yx"]
 
-    @TDSources_yx.setter
-    def TDSources_yx(self, value):
-        self._TDSources_yx = value
-        self._save(self._TDSources_yx, self._path_TDSources_yx, 'test')
-
-    ################################################################################
-
+    ########################################
     @property
-    def TeamDriveDict(self):
+    def _path_TeamDriveDict(self) -> str:
+        return self._solve_path(self._json["path_TeamDriveDict"])
+
+    """ interface """
+    # {
+    #     "<drive_id>":
+    #     {
+    #         "kind": "drive#teamDrive",
+    #         "id": "<drive_id>",
+    #         "name": "<drive_name>",
+    #         "colorRgb": "#0f9d58",
+    #         ...,
+    #     },
+    # }
+    @property
+    def TeamDriveDict(self) -> dict:
         if self._TeamDriveDict is None:
             self._TeamDriveDict = self._load(self._path_TeamDriveDict, 'json')
         return self._TeamDriveDict
@@ -135,22 +171,20 @@ class __Cache__:
         if value is not None:
             self._TeamDriveDict = value
         self._save(self._TeamDriveDict, self._path_TeamDriveDict, 'json')
-
     ################################################################################
 
-    @property
-    def pyppeteer_args(self):
-        if self._pyppeteer_args is None:
-            self._pyppeteer_args = self._load(self._path_pyppeteer_args, 'json')
-        return self._pyppeteer_args
+    def _solve_path(self, raw_path: str, account: str = None) -> str:
+        solved_path = raw_path.replace("<cache_root>", self._root)
+        if account is not None:
+            solved_path = solved_path.replace("<google_account>", account)
 
-    # save to file when set
-    @pyppeteer_args.setter
-    def pyppeteer_args(self, args: dict):
-        self._pyppeteer_args = args
-        self._save(self._pyppeteer_args, self._path_pyppeteer_args, 'json')
+        # make sure the parent dir exists
+        parent_dir = os.path.dirname(solved_path)
+        if not os.path.isdir(parent_dir):  # if the dir exists or not
+            os.makedirs(parent_dir)  # make the dir required
+            print(f"{parent_dir} is created!")
 
-    ################################################################################
+        return solved_path
 
     @staticmethod
     # Python, just can't update a value by passing it to a function...
@@ -158,19 +192,24 @@ class __Cache__:
             # in_memory_data,
             path, store_method='json'
     ):
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             fr = f.read()
-            in_memory_data = json.loads(fr) if store_method == 'json' else eval(fr.lower())
+            in_memory_data = json.loads(fr) \
+                if store_method == 'json' \
+                else eval(fr.lower())
         return in_memory_data
 
     @staticmethod
     def _save(in_memory_data, path, store_method='json'):
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding='utf-8') as f:
             if store_method == 'json':
-                f.write(json.dumps(in_memory_data, indent=4, separators=(',', ':')))
+                f.write(json.dumps(
+                    in_memory_data,
+                    indent=4, separators=(',', ':'),
+                    ensure_ascii=False
+                ))
             else:
                 f.write(str(in_memory_data))
-                
     ################################################################################
 
 
@@ -179,10 +218,15 @@ cache = __Cache__()
 if __name__ == '__main__':
 
     # tds = cache.TDSources
-    # tdr = cache.TDReceivers
+    # tds1 = cache.json.TDSources  # error
+    # email = cache.TDSources[0].email  # error
+
     # path_token = cache.path_token(cache.TDSources[0]['email'])
 
     # TeamDriveDict = cache.TeamDriveDict
-    # TeamDriveDict['id'] = "item"
+    # cache.TeamDriveDict['id'] = "item test 测试"  # tested
+    # cache.TeamDriveDict = None
+
+    # print(f"{id(cache.TDSources)}, {id(cache.json['TDSources'])}")  # same
 
     print("done")

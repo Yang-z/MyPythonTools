@@ -11,23 +11,25 @@ import time
 
 # from retrying import retry
 
-from Cache import cache  # it works
+# from Cache import cache
+# it runs, but can't get linked in pyCharm, unless...
+
+from .Cache import cache
 
 
 class GDrive:
 
     def __init__(self, google_account: str, org_r: str = None):
-        # If modifying these scopes, delete the file token.pickle.
-        self.SCOPES = ['https://www.googleapis.com/auth/drive']
-
         self.google_account = google_account
         self.org_r = org_r
 
         self.SERVICE = self.connect()
 
     def connect(self):
-        path_credentials = cache.path_credentials
-        path_token = cache.path_token(self.google_account)
+        # If modifying these scopes, delete the file token.pickle.
+        SCOPES = cache.gd_api_SCOPES
+        path_credentials = cache.gd_api_path_credentials
+        path_token = cache.gd_api_path_token(self.google_account)
 
         # Call the Drive v3 API
         creds = None
@@ -42,7 +44,7 @@ class GDrive:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(path_credentials, self.SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file(path_credentials, SCOPES)
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
             with open(path_token, 'wb') as token:

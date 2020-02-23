@@ -2,7 +2,7 @@ import requests
 import json
 from time import sleep
 
-from Cache import cache
+from .Cache import cache
 
 
 def request_1_4_1(td_source, td_receiver):

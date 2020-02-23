@@ -16,7 +16,7 @@ class __Cache__:
 
         self._root: str = os.path.join(os.path.dirname(__file__), r".cache")
 
-        self._path_json: str = os.path.join(self._root, "cache.json")
+        self._path_json: str = os.path.join(self._root, ".json")
         self._json: dict = self._load(self._path_json)
 
         # load from file

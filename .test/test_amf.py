@@ -5,9 +5,7 @@ from pyamf import remoting as pyamf_remoting
 
 with open(filedialog.askopenfilename(), 'rb') as f:
     content: bytes = f.read()
-    try:
-        decoded = pyamf_remoting.decode(content)
-    except Exception as e:
-        print(e)
+    decoded = pyamf_remoting.decode(content)  # ✔️
+    decoded2 = pyamf.decode(f)  # ⚠️
 
     print("done!")

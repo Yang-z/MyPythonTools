@@ -37,7 +37,9 @@ if __name__ == '__main__':
                 res = session.post(url, headers=headers, data=amf)
                 session = session_2 if session is session_1 else session_1
                 # time.sleep(0.5)
+                # res.result()
             res.result()
             time.sleep(action['delay'])
+        # break
 
     print('done')

@@ -31,7 +31,6 @@ class GDrive:
         path_credentials = cache.gd_api_path_credentials
         path_token = cache.gd_api_path_token(self.google_account)
 
-        # Call the Drive v3 API
         creds = None
         # The file token.pickle stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first

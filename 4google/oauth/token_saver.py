@@ -41,15 +41,3 @@ class tokenSaver:
 
         path = os.path.join(tokenSaver.PATH_CACHE, r"token.pickle", file_name)
         return path
-
-
-if __name__ == '__main__':
-    SCOPES = [
-        "https://www.googleapis.com/auth/userinfo.email", 
-        "https://www.googleapis.com/auth/userinfo.profile", 
-        "openid"
-    ]
-
-    path = tokenSaver.get_token_path("a@gmail.com", SCOPES)
-
-    print(path)

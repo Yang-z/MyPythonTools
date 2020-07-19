@@ -11,10 +11,20 @@ import time
 
 # from retrying import retry
 
-# from Cache import cache
-# it runs, but can't get linked in pyCharm, unless...
+# Import file in the current file dir.
+if __name__ == '__main__':
+    from Cache import cache
+else:
+    from .Cache import cache
 
-from .Cache import cache
+# Import file beyond the current file dir..
+if __package__ is None or __package__ == '':
+    import sys
+    from os import path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+    from oauth.installed import login as oauth_login
+else:
+    from ..oauth.installed import login as oauth_login
 
 
 class GDrive:
@@ -23,35 +33,7 @@ class GDrive:
         self.google_account = google_account
         self.org_r = org_r
 
-        self.SERVICE = self.connect()
-
-    def connect(self):
-        # If modifying these scopes, delete the file token.pickle.
-        SCOPES = cache.gd_api_SCOPES
-        path_credentials = cache.gd_api_path_credentials
-        path_token = cache.gd_api_path_token(self.google_account)
-
-        creds = None
-        # The file token.pickle stores the user's access and refresh tokens, and is
-        # created automatically when the authorization flow completes for the first
-        # time.
-        if os.path.exists(path_token):
-            with open(path_token, 'rb') as token:
-                creds = pickle.load(token)
-        # If there are no (valid) credentials available, let the user log in.
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(path_credentials, SCOPES)
-                creds = flow.run_local_server(port=0)
-            # Save the credentials for the next run
-            with open(path_token, 'wb') as token:
-                pickle.dump(creds, token)
-
-        service = build('drive', 'v3', credentials=creds)
-
-        return service
+        self.SERVICE = oauth_login('drive', 'v3', cache.gd_api_SCOPES, self.google_account)
 
     ################################################################################
 

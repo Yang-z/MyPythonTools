@@ -1,5 +1,4 @@
 import os.path
-
 import pickle
 import hashlib
 

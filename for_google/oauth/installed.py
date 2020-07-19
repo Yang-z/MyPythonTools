@@ -1,11 +1,13 @@
-import json
-
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
+# Import file in the current file dir.
+if __name__ == '__main__':
+    from token_saver import tokenSaver
+else:
+    from .token_saver import tokenSaver
 
-from token_saver import tokenSaver
 
 def login(
     # https://github.com/googleapis/google-api-python-client/blob/master/docs/dyn/index.md
@@ -15,7 +17,7 @@ def login(
     # If modifying these scopes, the old file token.pickle becomes unsuitable.
     API_SCOPES,
 
-    #
+    # If not provided, no stored token could be found.
     email = None
 ):
     require_userinfo(API_SCOPES)
@@ -61,8 +63,15 @@ def require_userinfo(API_SCOPES: list):
         if s not in API_SCOPES:
             API_SCOPES.append(s)
 
+
+import json
 def get_userinfo(creds):
+    # ref: 
+    # http://googleapis.github.io/google-api-python-client/docs/dyn/oauth2_v2.html
+    # https://stackoverflow.com/questions/24442668/google-oauth-api-to-get-users-email-address
+    # api:
     # https://www.googleapis.com/oauth2/v2/userinfo
+    # or https://developers.google.com/people/v1/profiles#protocol
     service = build('oauth2', 'v2', credentials=creds)
     userinfo = service.userinfo().get().execute()
     print(json.dumps(
@@ -71,3 +80,8 @@ def get_userinfo(creds):
         ensure_ascii=False
     ))
     return userinfo
+
+
+# ref: 
+# https://github.com/googleapis/google-api-python-client/blob/master/docs/oauth-installed.md
+# https://developers.google.com/drive/api/v3/quickstart/python

@@ -28,6 +28,7 @@ def print_json(j):
 
 
 class GFit:
+    
     def __init__(self, google_account: str):
         self.google_account = google_account
 
@@ -37,6 +38,8 @@ class GFit:
             cache['API']['SCOPES'], 
             self.google_account
         )
+
+    ################################################################################
 
     def list_dataSources(self):
         result = self.SERVICE.users().dataSources().list(
@@ -67,6 +70,9 @@ class GFit:
             body = body
         ).execute()
         print_json(result)
+
+    ################################################################################
+
 
 
 # ref:

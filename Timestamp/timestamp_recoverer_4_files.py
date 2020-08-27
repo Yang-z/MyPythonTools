@@ -104,7 +104,40 @@ class TimestampRecoverer4Files(object):
                         print("↑↑↑m_time_source: ", m_time_source)
 
 
-if __name__ == "__main__":
+def shell():
     from tkinter import filedialog
 
-    TimestampRecoverer4Files.recover_by_hash(filedialog.askdirectory(), filedialog.askdirectory(), True)
+    # Import file beyond the current file dir..
+    if __package__ is None or __package__ == '':
+        import sys
+        from os import path
+        sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+        from shell.shell_helper import yes_or_no, choose_one
+    else:
+        from ..shell.shell_helper import yes_or_no, choose_one
+
+
+    i = choose_one(
+        "TimestampRecoverer4Files Shell: ",
+        [
+            'recover by name',
+            'recover by hash'
+        ],
+        -1,
+        True
+    )
+
+    if(i == 0):
+        TimestampRecoverer4Files.recover_by_name(filedialog.askdirectory())
+    elif(i == 1):
+        TimestampRecoverer4Files.recover_by_hash(
+            filedialog.askdirectory(title="target"), 
+            filedialog.askdirectory(title="source"), 
+            yes_or_no(title="dry run?", default=True)
+        )
+    else:
+        print("function not find")
+
+
+if __name__ == "__main__":
+    shell()

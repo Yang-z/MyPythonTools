@@ -12,10 +12,12 @@ class TimestampHelper(object):
     def set(path, timestamp, sub=False):
         timestamp_o = os.path.getmtime(path)
 
-        # only bring time ahead，no delay
+        # only decrease timestamp，not increase
         if timestamp < timestamp_o:
             os.utime(path, (timestamp, timestamp))
             TimestampHelper.show(path)
+        else:
+            print("denied: try to increase timestamp ")
 
         # do for the sub path
         if sub and os.path.isdir(path):
@@ -42,14 +44,50 @@ class TimestampHelper(object):
 
 
 
+def shell():
+    # Import file beyond the current file dir..
+    if __package__ is None or __package__ == '':
+        import sys
+        from os import path
+        sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+        from shell.shell_helper import file_or_dir, yes_or_no, choose_one
+    else:
+        from ..shell.shell_helper import file_or_dir, yes_or_no, choose_one
+
+
+    i = choose_one(
+        "TimestampHelper Shell: ",
+        [
+            'show', # 0
+            'set',  # 1
+            'copy', # 2
+            'shift' # 3
+        ],
+        -1,
+        True
+    )
+
+    if(i == 0):
+        path = file_or_dir()
+        TimestampHelper.show(path)
+    elif(i == 1):
+        path = file_or_dir()
+        timestamp = float(input('timestamp (in seconds): '))
+        sub = False if not os.path.isdir(path) else yes_or_no(title="do for the sub path?", default=False)
+        TimestampHelper.set(path, timestamp, sub)
+    elif(i == 2):
+        path_target = file_or_dir("target")
+        path_source = file_or_dir("source")
+        sub = False if not os.path.isdir(path_target) else yes_or_no(title="do for the sub path?", default=False)
+        TimestampHelper.copy(path_target, path_source, sub)
+    elif(i == 3):
+        path = file_or_dir()
+        dt = float(input('dt (in seconds): '))
+        sub = False if not os.path.isdir(path) else yes_or_no(title="do for the sub path?", default=False)
+        TimestampHelper.shift(path, dt, sub)
+    else:
+        print("function not find")
+
 
 if __name__ == "__main__":
-    from tkinter import filedialog
-
-    # filedialog.askopenfilename()
-    # filedialog.askdirectory()
-
-    # TimestampHelper.show(filedialog.askopenfilename())
-    # TimestampHelper.set(filedialog.askopenfilename(), float(input('timestamp: ')), False)
-    # TimestampHelper.copy(filedialog.askopenfilename(), filedialog.askopenfilename(), False)
-    # TimestampHelper.shift(filedialog.askdirectory(), -1*365*24*60*60, True)
+    shell()

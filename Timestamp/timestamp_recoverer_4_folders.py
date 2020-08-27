@@ -76,7 +76,53 @@ class TimestampRecoverer4Folders(object):
         return ts_earliest, ts_latest
 
 
-if __name__ == "__main__":
+def shell():
     from tkinter import filedialog
 
-    TimestampRecoverer4Folders.recover(filedialog.askdirectory(), 'latest', None)
+    # Import file beyond the current file dir..
+    if __package__ is None or __package__ == '':
+        import sys
+        from os import path
+        sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+        from shell.shell_helper import yes_or_no, choose_one
+    else:
+        from ..shell.shell_helper import yes_or_no, choose_one
+
+    i = choose_one(
+        "TimestampRecoverer4Folders Shell: ",
+        [
+            'recover'
+        ],
+        -1,
+        True
+    )
+
+    if(i == 0):
+        path = filedialog.askdirectory()
+        strategy = choose_one(
+            "strategy: ",
+            [
+                'latest',
+                'earliest'
+            ],
+            0
+        )
+        refresh = choose_one(
+            "refresh:\n"+
+            "# None: do nothing\n"+
+            "# True: rename folder to include refresh key\n"+
+            "# False: rename folder back to its original name",
+            [
+                None,
+                True,
+                False
+            ],
+            0
+        )
+        
+        TimestampRecoverer4Folders.recover(path, strategy, refresh)
+    else:
+        print("function not find")
+
+if __name__ == "__main__":
+    shell()

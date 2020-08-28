@@ -106,17 +106,8 @@ class TimestampRecoverer4Files(object):
 
 def shell():
     from tkinter import filedialog
-
-    # Import file beyond the current file dir..
-    if __package__ is None or __package__ == '':
-        import sys
-        from os import path
-        sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-        from shell.shell_helper import yes_or_no, choose_one
-    else:
-        from ..shell.shell_helper import yes_or_no, choose_one
-
-
+    from shell.shell_helper import yes_or_no, choose_one
+    
     i = choose_one(
         "TimestampRecoverer4Files Shell: ",
         [

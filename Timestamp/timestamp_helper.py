@@ -45,15 +45,7 @@ class TimestampHelper(object):
 
 
 def shell():
-    # Import file beyond the current file dir..
-    if __package__ is None or __package__ == '':
-        import sys
-        from os import path
-        sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-        from shell.shell_helper import file_or_dir, yes_or_no, choose_one
-    else:
-        from ..shell.shell_helper import file_or_dir, yes_or_no, choose_one
-
+    from shell.shell_helper import file_or_dir, yes_or_no, choose_one
 
     i = choose_one(
         "TimestampHelper Shell: ",

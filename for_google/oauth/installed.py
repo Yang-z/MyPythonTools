@@ -2,11 +2,7 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-# Import file in the current file dir.
-if __name__ == '__main__':
-    from token_saver import tokenSaver
-else:
-    from .token_saver import tokenSaver
+from for_google.oauth.token_saver import tokenSaver
 
 
 def login(

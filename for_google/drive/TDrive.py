@@ -1,30 +1,12 @@
 from __future__ import print_function
-import pickle
-import os.path
+
 import uuid
-
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-
 import time
 
 # from retrying import retry
 
-# Import file in the current file dir.
-if __name__ == '__main__':
-    from Cache import cache
-else:
-    from .Cache import cache
-
-# Import file beyond the current file dir..
-if __package__ is None or __package__ == '':
-    import sys
-    from os import path
-    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-    from oauth.installed import login as oauth_login
-else:
-    from ..oauth.installed import login as oauth_login
+from for_google.oauth.installed import login as oauth_login
+from for_google.drive.data import config, cache
 
 
 class GDrive:
@@ -33,7 +15,12 @@ class GDrive:
         self.google_account = google_account
         self.org_r = org_r
 
-        self.SERVICE = oauth_login('drive', 'v3', cache.gd_api_SCOPES, self.google_account)
+        self.SERVICE = oauth_login(
+            config.json['API']['SERVICE_NAME'],  # 'drive'
+            config.json['API']['VERSION'],       # 'v3'
+            config.json['API']['SCOPES'],
+            self.google_account
+        )
 
     ################################################################################
 
@@ -198,10 +185,10 @@ class GDrive:
         creator_permission_id = self.get_permission_id_by_email(drive['id'], self.google_account)
         self.delete_permission(drive['id'], creator_permission_id)
 
-    # Use cache.TeamDrive to obtain org
+    # Use cache.TeamDriveDict to obtain org
     def rename_t_drive_by_org(self, drive):
         try:
-            org: str = cache.TTeamDriveDictesmDriveDict[drive['id']]['primaryDomainName']
+            org: str = cache.TeamDriveDict[drive['id']]['primaryDomainName']
         except Exception as e:
             print(f"Drive({drive['id']}, {drive['name']}) is not found in cache!!!] ")
             return
@@ -248,12 +235,12 @@ class GDrive:
 
     ################################################################################
 
-    # Use cache.TDReceivers
+    # Use config.TDReceivers
     def batch_create_t_drive_1_4_all(self, name=None):
         # take org(reversed) for the drive name if name is not provided.
         drive_name = name if name is not None else self.org_r
 
-        for receiver in cache.TDReceivers:
+        for receiver in config.json['TDReceivers']:
             times = receiver['times']
             to_email = receiver['email']
 
@@ -268,12 +255,12 @@ class GDrive:
   
     ################################################################################
 
-    # Use cache.TeamDrive to obtain org
+    # Use cache.TeamDriveDict to obtain org
     def batch_create_permission_for_when_org_is(self, email, org):
 
         for drive in self.yield_t_drive_1_by_1():
             try:
-                _org: str = cache.TTeamDriveDictesmDriveDict[drive['id']]['primaryDomainName']
+                _org: str = cache.TeamDriveDict[drive['id']]['primaryDomainName']
             except Exception as e:
                 print(f"Drive({drive['id']}, {drive['name']}) is not found in cache!!!] ")
                 continue
@@ -281,11 +268,11 @@ class GDrive:
             if _org == org:
                 self.create_permission(drive['id'], email)
 
-    # Use cache.TeamDrive to obtain org
+    # Use cache.TeamDriveDict to obtain org
     def batch_delete_permission_for_when_org_is(self, email, org):
         for drive in self.yield_t_drive_1_by_1():
             try:
-                _org: str = cache.TTeamDriveDictesmDriveDict[drive['id']]['primaryDomainName']
+                _org: str = cache.TeamDriveDict[drive['id']]['primaryDomainName']
             except Exception as e:
                 print(f"Drive({drive['id']}, {drive['name']}) is not found in cache!!!] ")
                 continue
@@ -303,8 +290,8 @@ class GDrive:
     def count_t_drive_by_org(self):
         statistics = {}
 
-        for item in cache.TTeamDriveDictesmDriveDict:
-            org = cache.TTeamDriveDictesmDriveDict[item]['primaryDomainName']
+        for item in cache.TeamDriveDict:
+            org = cache.TeamDriveDict[item]['primaryDomainName']
             if org not in statistics:
                 statistics[org] = 1
             else:
@@ -332,7 +319,7 @@ class GDrive:
 
 if __name__ == '__main__':
 
-    GDriveSession1 = GDrive(cache.TDReceivers[0]['email'])
+    GDriveSession1 = GDrive(config.json['TDReceivers'][0]['email'])
     for drive in GDriveSession1.yield_t_drive_1_by_1():
         print(drive)
 

@@ -1,12 +1,12 @@
-import os.path
+import os
 import pickle
 import hashlib
 
 
 class tokenSaver:
-    PATH_CACHE = os.path.join(os.path.dirname(__file__), r".cache")
-    PATH_CLIENT_SECRETS = os.path.join(PATH_CACHE, r"client_secret.json")
-    # PATH_TOKEN_DIR = os.path.join(PATH_CACHE, r"token.pickle")
+    PATH_CACHE = f"{os.environ.get('DATAPATH')}/for_google/oauth"
+    PATH_CLIENT_SECRETS = f"{PATH_CACHE}/client_secret.json"
+    PATH_TOKEN_DIR = f"{PATH_CACHE}/token.pickle"
 
     @staticmethod
     def load(email, SCOPES):
@@ -38,5 +38,13 @@ class tokenSaver:
         md.update(str_scopes.encode('utf-8'))
         file_name = email + "_" + md.hexdigest()
 
-        path = os.path.join(tokenSaver.PATH_CACHE, r"token.pickle", file_name)
+        path = f"{tokenSaver.PATH_TOKEN_DIR}/{file_name}"
         return path
+
+
+if __name__ == '__main__':
+    def test():
+        tokenSaver
+        print('break here')
+
+    test()

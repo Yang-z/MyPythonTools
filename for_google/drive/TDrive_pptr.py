@@ -22,8 +22,9 @@ patch_pyppeteer()
 ########################################################################################################################
 
 
-from .Cache import cache
+from for_google.drive.data import config, cache
 
+pyppeteer_args = config.json['pyppeteer_args']
 url = r'https://drive.google.com/drive/u/'
 isCompleted = False
 
@@ -57,8 +58,8 @@ async def main():
     global url
 
     browser = await launch(
-        executablePath=cache.pyppeteer_args['chromePath'],
-        userDataDir=cache.pyppeteer_args['userDataDir1'],
+        executablePath=pyppeteer_args['chromePath'],
+        userDataDir=pyppeteer_args['userDataDir1'],
         headless=False,
         # devtools=True,
         # autoClose=False,

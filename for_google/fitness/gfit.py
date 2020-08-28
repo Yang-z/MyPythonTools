@@ -1,22 +1,15 @@
 import json
 import os.path
-from typing import Generator
+# from typing import Generator
 
-# Import file beyond the current file dir..
-if __package__ is None or __package__ == '':
-    import sys
-    from os import path
-    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-    from oauth.installed import login as oauth_login
-else:
-    from ..oauth.installed import login as oauth_login
+from for_google.oauth.installed import login as oauth_login
 
 
 with open(
-    os.path.join(os.path.dirname(__file__), r".cache", r".json"), 
+    f"{os.environ.get('DATAPATH')}/for_google/fitness/config.json",
     'r', encoding='utf-8'
 ) as f:
-    cache = json.loads(f.read())
+    config = json.loads(f.read())
 
 def print_json(j):
     print(
@@ -34,9 +27,9 @@ class GFit:
         self.google_account = google_account.lower()
 
         self.SERVICE = oauth_login(
-            cache['API']['SERVICE_NAME'],  # "fitness"
-            cache['API']['VERSION'],  # "v1"
-            cache['API']['SCOPES'], 
+            config['API']['SERVICE_NAME'],  # "fitness"
+            config['API']['VERSION'],       # "v1"
+            config['API']['SCOPES'], 
             self.google_account
         )
 
@@ -142,37 +135,34 @@ class GFit:
 
 if __name__ == '__main__':
     def test():
-        user = cache['user'][1]['email']
+        user = config['user'][1]['email']
 
         gfit = GFit(user)
 
         gfit.list_dataSource()
         
         # gfit.update_dataSource(
-        #     cache['user'][1]['dataStreamIds'][2],
-        #     cache['data_sources'][0]
+        #     config['user'][1]['dataStreamIds'][2],
+        #     config['data_sources'][0]
         # )
 
         # gfit.get_dataset(
-        #     cache['user'][1]['dataStreamIds'][2],
+        #     config['user'][1]['dataStreamIds'][2],
         #     '1518402035000000000-1593531633000000000'
         # )
 
     test()
 
     def import_from_a_health_2_g_fit_4_step_count():
-        if __name__ == '__main__':
-            from apple_health_to_google_fit import AppleHealthToGoogleFit
-        else:
-            from .apple_health_to_google_fit import AppleHealthToGoogleFit
+        from for_google.fitness.apple_health_to_google_fit import AppleHealthToGoogleFit
 
-        user = cache['user'][1]['email']
-        data_source = cache['data_sources'][0]
+        user = config['user'][1]['email']
+        data_source = config['data_sources'][0]
 
         gfit = GFit(user)
         result = gfit.create_dataSource(data_source)
         dataStreamId = result['dataStreamId']
-        # dataStreamId = cache['user'][1]['dataStreamIds'][2]
+        # dataStreamId = config['user'][1]['dataStreamIds'][2]
         print(dataStreamId)
 
         a2g_fit = AppleHealthToGoogleFit.get_instance()

@@ -2,7 +2,7 @@ import requests
 import json
 from time import sleep
 
-from .Cache import cache
+from for_google.drive.data import config
 
 
 def request_1_4_1(td_source, td_receiver):
@@ -21,17 +21,17 @@ def request_1_4_1(td_source, td_receiver):
 
 
 def request_1_4_all(td_source):
-    for td_receiver in cache.TDReceivers:
+    for td_receiver in config.json['TDReceivers']:
         request_1_4_1(td_source, td_receiver)
 
 
 def request_all_4_1(td_receiver):
-    for td_source in cache.TDSources_yx:
+    for td_source in config.json['TDSources_yx']:
         request_1_4_1(td_source, td_receiver)
 
 
 ########################################################################################################################
 
 if __name__ == '__main__':
-    # request_1_4_all(cache.TDSources_yx[-1])
+    # request_1_4_all(config.json['TDSources_yx'][-1])
     print("done!")

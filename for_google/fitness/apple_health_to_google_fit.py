@@ -3,7 +3,7 @@ import xml.dom.minidom
 from dateutil.parser import parse as parse_date
 
 class AppleHealthToGoogleFit():
-    PATH_XML = os.path.join(os.path.dirname(__file__), ".cache", "apple_health_export", "export.xml")
+    PATH_XML = f"{os.environ.get('DATAPATH')}/for_google/fitness/apple_health_export/export.xml"
     
     __instance = None
 

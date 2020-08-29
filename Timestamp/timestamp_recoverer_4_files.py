@@ -106,7 +106,7 @@ class TimestampRecoverer4Files(object):
 
 def shell():
     from tkinter import filedialog
-    from shell.shell_helper import yes_or_no, choose_one
+    from common.Shell import yes_or_no, choose_one
     
     i = choose_one(
         "TimestampRecoverer4Files Shell: ",

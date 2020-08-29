@@ -78,7 +78,7 @@ class TimestampRecoverer4Folders(object):
 
 def shell():
     from tkinter import filedialog
-    from shell.shell_helper import choose_one
+    from common.Shell import choose_one
 
     i = choose_one(
         "TimestampRecoverer4Folders Shell: ",

@@ -45,7 +45,7 @@ class TimestampHelper(object):
 
 
 def shell():
-    from shell.shell_helper import file_or_dir, yes_or_no, choose_one
+    from common.Shell import file_or_dir, yes_or_no, choose_one
 
     i = choose_one(
         "TimestampHelper Shell: ",

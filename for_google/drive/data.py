@@ -1,38 +1,14 @@
 import os
 import json
 
-
-_path_data = f"{os.environ.get('DATAPATH')}/for_google/drive"
-
-# Python, just can't update a value by passing it to a function...
-def _load(
-        # in_memory_data,
-        path, store_method='json'
-):
-    with open(path, 'r', encoding='utf-8') as f:
-        fr = f.read()
-        in_memory_data = json.loads(fr) \
-            if store_method == 'json' \
-            else eval(fr.lower())
-    return in_memory_data
-
-def _save(in_memory_data, path, store_method='json'):
-    with open(path, 'w', encoding='utf-8') as f:
-        if store_method == 'json':
-            f.write(json.dumps(
-                in_memory_data,
-                indent=4, separators=(',', ':'),
-                ensure_ascii=False
-            ))
-        else:
-            f.write(str(in_memory_data))
-
+from common.Data import Data
 
 # expected to be Singleton
-class _config:
+class _Config:
 
     def __init__(self):
-        self._path_json: str = f"{_path_data}/config.json"
+        self.data_dir = f"{os.environ.get('DATAPATH')}/for_google/drive"
+        self._path_json: str = f"{self.data_dir}/config.json"
         self._json: dict = None
 
         self._json_eg = \
@@ -114,23 +90,21 @@ class _config:
     @property
     def json(self) -> dict:
         if self._json is None:
-            self._json = _load(self._path_json)
+            self._json = Data.load(self._path_json)
         return self._json
-
-    # @json.setter
-    # def json(self, value):
-    #     if value is not None:
-    #         self._json = value
-    #     _save(self._json, self._path_json, 'json')
+ 
+    def save(self):
+        Data.save(self._json, self._path_json)
 
     ################################################################################
 
-class _cache:
-    def __init__(self):
-        self._path_TeamDriveDict: str = f"{_path_data}/TeamDriveDict.json"
 
+config = _Config()
+
+class _Cache:
+    def __init__(self):
         # load from file
-        self._TeamDriveDict: dict = None
+        self._TeamDriveDicts: dict = {}
         self._TeamDriveDict_eg = \
         {
             "<drive_id>":
@@ -146,26 +120,33 @@ class _cache:
         # only store on memory
         self.permissions: dict = {}
 
-    @property
-    def TeamDriveDict(self) -> dict:
-        if self._TeamDriveDict is None:
-            self._TeamDriveDict = _load(self._path_TeamDriveDict, 'json')
-        return self._TeamDriveDict
+    def Path_TDDict(self, user):
+        path = Data.solve_path(
+            config.json['Path_TeamDriveDict'], 
+            {
+                'appDataDir': config.data_dir,
+                'user': user
+            }
+        )
 
-    # @TeamDriveDict.setter
-    # def TeamDriveDict(self, value):
-    #     # what if value is None? The setter will save the original date to file!
-    #     if value is not None:
-    #         self._TeamDriveDict = value
-    #     _save(self._TeamDriveDict, self._path_TeamDriveDict, 'json')
-    def SaveTDDict(self):
-        _save(self._TeamDriveDict, self._path_TeamDriveDict, 'json')
+        return path
+
+    def TeamDriveDict(self, user)->dict:
+        if self._TeamDriveDicts.get(user) is None:
+            self._TeamDriveDicts[user] = Data.load(self.Path_TDDict(user))
+        return self._TeamDriveDicts[user]
+
+    def Save_TDDict(self, user):
+        Data.save(self.TeamDriveDict(user), self.Path_TDDict(user))
     
 
-config = _config()
-cache = _cache()
+cache = _Cache()
 
 
 if __name__ == '__main__':
-    print(config.json['API']['SERVICE_NAME'])
+    service_name = config.json['API']['SERVICE_NAME']
+
+    user0 = config.json['TDReceivers'][0]['email'].lower()
+    tddic = cache.TeamDriveDict(user0)
+
     print("break here")

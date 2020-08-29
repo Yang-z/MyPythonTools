@@ -289,16 +289,16 @@ class GDrive:
     # Use cache.TeamDriveDict ONLY
     def count_t_drive_by_org(self):
         statistics = {}
-
-        for item in cache.TeamDriveDict:
-            org = cache.TeamDriveDict[item]['primaryDomainName']
+        TDDic = cache.TeamDriveDict(self.google_account)
+        for key in TDDic:
+            org = TDDic[key]['primaryDomainName']
             if org not in statistics:
                 statistics[org] = 1
             else:
                 statistics[org] += 1
 
-        for item in statistics:
-            print(f"{item}: {statistics[item]}")
+        for key in statistics:
+            print(f"{key}: {statistics[key]}")
 
     # online
     def count_t_drive_by_name(self):
@@ -318,9 +318,12 @@ class GDrive:
 
 
 if __name__ == '__main__':
+    user0 = config.json['TDReceivers'][0]['email'].lower()
+    GDriveSession0 = GDrive(user0)
 
-    GDriveSession1 = GDrive(config.json['TDReceivers'][0]['email'])
-    for drive in GDriveSession1.yield_t_drive_1_by_1():
-        print(drive)
+    # for drive in GDriveSession0.yield_t_drive_1_by_1():
+    #     print(drive)
+
+    GDriveSession0.count_t_drive_by_org()
 
     print('done!')

@@ -1,5 +1,4 @@
 import os
-import json
 
 from common.Data import Data
 
@@ -10,81 +9,6 @@ class _Config:
         self.data_dir = f"{os.environ.get('DATAPATH')}/for_google/drive"
         self._path_json: str = f"{self.data_dir}/config.json"
         self._json: dict = None
-
-        self._json_eg = \
-        {
-            "API":
-            {
-                "SERVICE_NAME": "drive",
-                "VERSION": "v3",
-                "SCOPES":
-                [
-                    "https://www.googleapis.com/auth/drive"
-                ]
-            },
-
-            "TDReceivers":
-            [
-                {
-                    "email": "*@*.org",
-                    "times": 0
-                },
-            ],
-
-            "TDSources":
-            [
-                {
-                    "org": "org.*",
-                    "email": "*@*.org",
-                    "org-name-zh": "*组织"
-                },
-            ],
-
-            "TDSources_yx":
-            [
-                {
-                    "org": "org.*",
-                    "url": "https://*.workers.dev/drive",
-                    "name-zh": "*组织",
-                },
-            ],
-
-            "pyppeteer_args":
-            {
-                "default":
-                {
-                    "chromePath": "%LOCALAPPDATA%\\pyppeteer\\pyppeteer\\local-chromium\\575458\\chrome-win32",
-                    "userDataDir": "%LOCALAPPDATA%\\pyppeteer\\pyppeteer\\.dev_profile\\tmp*"
-                },
-                "chromePath":"*\\chrome.exe",
-                "userDataDir":"*\\User Data",
-            },
-
-            "requests_args":
-            [
-                {
-                    "url": "https://drive.google.com/drive/u/0/shared-drives",
-                    "headers":
-                    {
-                        "cookie": "...",
-                        "upgrade-insecure-requests": "...",
-                        "user-agent": "...",
-                        "x-chrome-connected":"...",
-                        "x-client-data":"..."
-                    }
-                },
-                {
-                    "url": "https://clients6.google.com/drive/v2internal/teamdrives",
-                    "payload":
-                        {
-                            "fields": "kind,nextPageToken,items(...)",
-                            "q": "hidden = false",
-                            "key": "..."
-                        },
-                    "authorization": "..."
-                }
-            ]
-        }
 
     ################################################################################
     @property
@@ -98,24 +22,13 @@ class _Config:
 
     ################################################################################
 
-
 config = _Config()
+
 
 class _Cache:
     def __init__(self):
         # load from file
         self._TeamDriveDicts: dict = {}
-        self._TeamDriveDict_eg = \
-        {
-            "<drive_id>":
-            {
-                "kind": "drive#teamDrive",
-                "id": "<drive_id>",
-                "name": "<drive_name>",
-                "colorRgb": "#0f9d58",
-                "...": "...",
-            },
-        }
 
         # only store on memory
         self.permissions: dict = {}
@@ -133,12 +46,12 @@ class _Cache:
 
     def TeamDriveDict(self, user)->dict:
         if self._TeamDriveDicts.get(user) is None:
-            self._TeamDriveDicts[user] = Data.load(self.Path_TDDict(user))
+            TDDict = Data.load(self.Path_TDDict(user))
+            self._TeamDriveDicts[user] = TDDict if TDDict else {}
         return self._TeamDriveDicts[user]
 
     def Save_TDDict(self, user):
         Data.save(self.TeamDriveDict(user), self.Path_TDDict(user))
-    
 
 cache = _Cache()
 

@@ -289,16 +289,21 @@ class GDrive:
     # Use cache.TeamDriveDict ONLY
     def count_t_drive_by_org(self):
         statistics = {}
+        organizationDisplayName = {}
         TDDic = cache.TeamDriveDict(self.google_account)
         for key in TDDic:
             org = TDDic[key]['primaryDomainName']
             if org not in statistics:
                 statistics[org] = 1
+                organizationDisplayName[org] = TDDic[key]['organizationDisplayName']
             else:
                 statistics[org] += 1
 
-        for key in statistics:
-            print(f"{key}: {statistics[key]}")
+        for org in statistics:
+            org_list: list = org.split('.')
+            org_list.reverse()
+            org_reversed = '.'.join(org_list)
+            print(f"{org_reversed}|{org}|{organizationDisplayName[org]}|{statistics[org]}")
 
     # online
     def count_t_drive_by_name(self):

@@ -1,4 +1,5 @@
 import json
+import os
 
 class Data:
 
@@ -8,6 +9,7 @@ class Data:
             # in_memory_data,
             path, store_method='json'
     ):
+        if not os.path.exists(path): return None
         with open(path, 'r', encoding='utf-8') as f:
             fr = f.read()
             in_memory_data = json.loads(fr) \

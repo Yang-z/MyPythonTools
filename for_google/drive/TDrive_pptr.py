@@ -1,9 +1,8 @@
 import asyncio
 from pyppeteer import launch
 
+
 ########################################################################################################################
-
-
 def patch_pyppeteer():
     import pyppeteer.connection
     original_method = pyppeteer.connection.websockets.client.connect
@@ -14,7 +13,6 @@ def patch_pyppeteer():
         return original_method(*args, **kwargs)
 
     pyppeteer.connection.websockets.client.connect = new_method
-
 
 patch_pyppeteer()
 
@@ -28,10 +26,11 @@ pyppeteer_args = config.json['pyppeteer_args']
 url = r'https://drive.google.com/drive/u/'
 isCompleted = False
 
+user = config.json['TDReceivers'][0]['email']
 
 async def intercept_response(res):
 
-    global isCompleted
+    global isCompleted, user
 
     if res.request.resourceType == 'xhr' \
             and res.request.method == 'GET' \
@@ -43,7 +42,7 @@ async def intercept_response(res):
         if 'kind' in resp and resp['kind'] == 'drive#teamDriveList':
             print(resp)
             for item in resp['items']:
-                cache.TeamDriveDict[item['id']] = item
+                cache.TeamDriveDict(user)[item['id']] = item
 
             if 'nextPageToken' not in resp and isCompleted is False:
                 isCompleted = True
@@ -54,12 +53,11 @@ async def intercept_response(res):
 
 
 async def main():
-    global isCompleted
-    global url
+    global isCompleted, url, user
 
     browser = await launch(
         executablePath=pyppeteer_args['chromePath'],
-        userDataDir=pyppeteer_args['userDataDir1'],
+        userDataDir=pyppeteer_args['userDataDir'],
         headless=False,
         # devtools=True,
         # autoClose=False,
@@ -96,7 +94,7 @@ async def main():
         """
         # goto 'shared-drives-hidden' will request un-hidden drive list again.
 
-    cache.TeamDriveDict = None  # do save actually!
+    cache.Save_TDDict(user)
     print("Saved!")
 
     await asyncio.sleep(5)

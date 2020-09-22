@@ -9,12 +9,13 @@ class TimestampHelper(object):
         print("mtime:", os.path.getmtime(path))
 
     @staticmethod
-    def set(path, timestamp, sub=False):
+    def set(path, timestamp, sub=False, decrease_only=True, delt = 0):
         timestamp_o = os.path.getmtime(path)
 
         # only decrease timestamp，not increase
-        if timestamp < timestamp_o:
+        if timestamp < timestamp_o or decrease_only == False:
             os.utime(path, (timestamp, timestamp))
+            timestamp += delt
             TimestampHelper.show(path)
         else:
             print("denied: try to increase timestamp ")
@@ -23,7 +24,9 @@ class TimestampHelper(object):
         if sub and os.path.isdir(path):
             for f in os.listdir(path):
                 sub_path = os.path.join(path, f)
-                TimestampHelper.set(sub_path, timestamp, sub)
+                timestamp = TimestampHelper.set(sub_path, timestamp, sub, decrease_only, delt)
+        
+        return timestamp
 
     @staticmethod
     def copy(target_path, source_path, sub=False):
@@ -66,7 +69,9 @@ def shell():
         path = file_or_dir()
         timestamp = float(input('timestamp (in seconds): '))
         sub = False if not os.path.isdir(path) else yes_or_no(title="do for the sub path?", default=False)
-        TimestampHelper.set(path, timestamp, sub)
+        decrease_only = yes_or_no(title="only decrease timestamp?", default=True)
+        delt = float(input('timestamp shift per file (in seconds): '))
+        TimestampHelper.set(path, timestamp, sub, decrease_only, delt)
     elif(i == 2):
         path_target = file_or_dir("target")
         path_source = file_or_dir("source")

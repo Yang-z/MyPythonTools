@@ -66,6 +66,7 @@ class PhotoDateAnalyser(object):
 
         self.time_string_raw = None
         self.timestamp = None
+        self.timestamp_ns = None
         self.datetime: datetime = None
         # self.reset_time_cash()
 
@@ -79,6 +80,7 @@ class PhotoDateAnalyser(object):
     def reset_time_cash(self):
         self.time_string_raw = None
         self.timestamp = None
+        self.timestamp_ns = None
         self.datetime: datetime = None
 
     def exe(self, strategy_id, tzinfo_default, should_reMTime, should_rename):
@@ -150,6 +152,7 @@ class PhotoDateAnalyser(object):
         self.time_string_raw = m.group(1)
         print("time_string: " + self.time_string_raw)
         self.timestamp = float(m.group(1)) / 1000
+        self.timestamp_ns = int(m.group(1)) * 1000 * 1000
         print('timestamp: %.3f' % self.timestamp)
 
         return True
@@ -231,7 +234,8 @@ class PhotoDateAnalyser(object):
             datetime.fromtimestamp(self.timestamp, self.datetime.tzinfo) \
                 .strftime(PhotoDateAnalyser.format_date_time)
         print('  Target MTime: %s %f' % (time_string_from_timestamp, self.timestamp))
-        os.utime(self._file_path, (self.timestamp, self.timestamp))
+        # os.utime(self._file_path, (self.timestamp, self.timestamp))
+        os.utime(self._file_path, ns=(self.timestamp_ns, self.timestamp_ns))
         PhotoDateAnalyser.count_reMTime += 1
         print("PhotoDateAnalyser.count_reMTime: %d" % PhotoDateAnalyser.count_reMTime)
 
@@ -281,22 +285,13 @@ def main():
     # 'Pacific/Kiritimati'
     # and so on
 
-    """
+
     PhotoDateAnalyser.batch(
         strategy_id='TIMESTAMP_IN_FILE_NAME',
         tzinfo_default=tz.gettz('Asia/Shanghai'),
         should_reMTime=True,
-        should_rename=True
+        should_rename=False
     )
-    """
-
-    PhotoDateAnalyser.batch(
-        strategy_id='EXIF', 
-        tzinfo_default=tz.gettz('Asia/Shanghai'),
-        should_reMTime=False, 
-        should_rename=True
-    )
-
 
 
 if __name__ == "__main__":

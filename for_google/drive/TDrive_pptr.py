@@ -40,7 +40,7 @@ async def intercept_response(res):
         resp = await res.json()
 
         if 'kind' in resp and resp['kind'] == 'drive#teamDriveList':
-            print(resp)
+            # print(resp)
             for item in resp['items']:
                 cache.TeamDriveDict(user)[item['id']] = item
 

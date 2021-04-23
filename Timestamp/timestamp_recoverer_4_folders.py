@@ -14,6 +14,7 @@ usage:
 
 
 import os
+from Timestamp.timestamp_helper import TimestampHelper as TSHelper
 
 
 class TimestampRecoverer4Folders(object):
@@ -30,11 +31,11 @@ class TimestampRecoverer4Folders(object):
             # ts_latest_current = None
 
             if os.path.isdir(path):
-                # 递归
+                # recursion 递归
                 ts_earliest_current, ts_latest_current \
                     = TimestampRecoverer4Folders.recover(path, strategy, refresh, False)
             else:
-                ts_earliest_current = os.path.getmtime(path)
+                ts_earliest_current = TSHelper.get(path)
                 ts_latest_current = ts_earliest_current
 
             if ts_earliest_current is not None:
@@ -47,9 +48,9 @@ class TimestampRecoverer4Folders(object):
 
         if ts_earliest is not None and ts_latest is not None:
             if strategy == 'earliest':
-                os.utime(target_dir, (ts_earliest, ts_earliest))
+                TSHelper.set(target_dir, ts_earliest)
             elif strategy == 'latest':
-                os.utime(target_dir, (ts_latest, ts_latest))
+                TSHelper.set(target_dir, ts_latest, decrease_only=False)
 
         # None: do nothing
         # True: rename folder to include refresh key
@@ -64,7 +65,8 @@ class TimestampRecoverer4Folders(object):
                     new_target_folder = refresh_key + target_folder
             elif refresh is False:
                 if refresh_key in target_folder:
-                    new_target_folder = str.replace(target_folder, refresh_key, "")
+                    new_target_folder = str.replace(
+                        target_folder, refresh_key, "")
 
             if new_target_folder is not None:
                 new_target_dir = os.path.join(up_dir, new_target_folder)
@@ -100,9 +102,9 @@ def shell():
             0
         )
         refresh = choose_one(
-            "refresh:\n"+
-            "# None: do nothing\n"+
-            "# True: rename folder to include refresh key\n"+
+            "refresh:\n" +
+            "# None: do nothing\n" +
+            "# True: rename folder to include refresh key\n" +
             "# False: rename folder back to its original name",
             [
                 None,
@@ -111,10 +113,11 @@ def shell():
             ],
             0
         )
-        
+
         TimestampRecoverer4Folders.recover(path, strategy, refresh)
     else:
         print("function not find")
+
 
 if __name__ == "__main__":
     shell()
